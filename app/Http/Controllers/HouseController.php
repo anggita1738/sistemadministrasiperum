@@ -26,6 +26,36 @@ class HouseController extends Controller
         return response()->json($house, 201);
     }
 
+    public function update(Request $request, $id)
+    {
+        $house = House::findOrFail($id);
+        $validated = $request->validate([
+            'code' => 'required|string|unique:houses,code,' . $id,
+            'is_occupied' => 'boolean'
+        ]);
+
+        $house->update($validated);
+        return response()->json($house);
+    }
+
+    public function destroy($id)
+    {
+        $house = House::findOrFail($id);
+        $house->delete();
+        return response()->json(['message' => 'Deleted successfully']);
+    }
+
+    public function history($id)
+    {
+        $house = House::findOrFail($id);
+        $history = HouseResident::where('house_id', $id)
+            ->with('resident')
+            ->orderBy('start_date', 'desc')
+            ->get();
+        
+        return response()->json($history);
+    }
+
     public function occupy(Request $request, $id)
     {
         $house = House::findOrFail($id);

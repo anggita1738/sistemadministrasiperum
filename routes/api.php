@@ -9,9 +9,13 @@ use App\Http\Controllers\ExpenseController;
 Route::get('/residents', [ResidentController::class, 'index']);
 Route::post('/residents', [ResidentController::class, 'store']);
 Route::put('/residents/{id}', [ResidentController::class, 'update']);
+Route::delete('/residents/{id}', [ResidentController::class, 'destroy']);
 
 Route::get('/houses', [HouseController::class, 'index']);
 Route::post('/houses', [HouseController::class, 'store']);
+Route::put('/houses/{id}', [HouseController::class, 'update']);
+Route::delete('/houses/{id}', [HouseController::class, 'destroy']);
+Route::get('/houses/{id}/history', [HouseController::class, 'history']);
 Route::post('/houses/{id}/occupy', [HouseController::class, 'occupy']);
 
 Route::get('/dues', [DueController::class, 'index']);

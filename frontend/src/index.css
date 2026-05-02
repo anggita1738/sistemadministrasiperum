@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --color-primary: #3b82f6;
   --color-secondary: #64748b;
   --color-success: #10b981;
@@ -29,4 +29,62 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Print Styles */
+@media print {
+  /* Hide UI elements */
+  aside, 
+  button, 
+  input, 
+  select,
+  .no-print,
+  .fixed,
+  .backdrop-blur-sm {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+  
+  span.print-only {
+    display: inline !important;
+  }
+
+  /* Reset layout for print */
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .glass {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure tables are visible and clean */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px !important;
+  }
+
+  /* Show title properly */
+  h2, h3 {
+    margin-top: 0 !important;
+    color: black !important;
+  }
 }

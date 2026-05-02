@@ -23,16 +23,32 @@ class DueController extends Controller
 
     public function store(Request $request)
     {
-        // Bulk generate or single
         $validated = $request->validate([
             'house_id' => 'required|exists:houses,id',
             'month' => 'required|string', // YYYY-MM
             'type' => 'required|in:satpam,kebersihan',
-            'amount' => 'required|numeric'
+            'amount' => 'required|numeric',
+            'months_count' => 'integer|min:1|max:12'
         ]);
 
-        $due = Due::create($validated);
-        return response()->json($due, 201);
+        $monthsCount = $request->input('months_count', 1);
+        $startDate = Carbon::parse($validated['month'] . '-01');
+        $created = [];
+
+        for ($i = 0; $i < $monthsCount; $i++) {
+            $currentMonth = $startDate->copy()->addMonths($i)->format('Y-m');
+            
+            $due = Due::create([
+                'house_id' => $validated['house_id'],
+                'month' => $currentMonth,
+                'type' => $validated['type'],
+                'amount' => $validated['amount'],
+                'status' => 'belum'
+            ]);
+            $created[] = $due;
+        }
+
+        return response()->json($created, 201);
     }
 
     public function pay(Request $request, $id)

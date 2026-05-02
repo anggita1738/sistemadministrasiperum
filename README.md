@@ -2,11 +2,61 @@
 
 Sistem Administrasi Perumahan yang dibangun menggunakan Laravel 12 (API Backend) dan React (Frontend menggunakan Vite). Sistem ini mendukung pengelolaan data penghuni, rumah, riwayat hunian, tagihan iuran bulanan (satpam & kebersihan), pengeluaran, serta laporan keuangan bulanan.
 
+## ERD (Entity Relationship Diagram)
+
+```mermaid
+erDiagram
+    residents {
+        int id PK
+        string full_name
+        string ktp_photo
+        enum status "tetap, kontrak"
+        string phone
+        boolean is_married
+        timestamps
+    }
+    houses {
+        int id PK
+        string code
+        boolean is_occupied
+        timestamps
+    }
+    house_residents {
+        int id PK
+        int house_id FK
+        int resident_id FK
+        date start_date
+        date end_date
+        timestamps
+    }
+    dues {
+        int id PK
+        int house_id FK
+        string month
+        enum type "satpam, kebersihan"
+        decimal amount
+        enum status "belum, lunas"
+        timestamp paid_at
+        timestamps
+    }
+    expenses {
+        int id PK
+        string description
+        decimal amount
+        date expense_date
+        timestamps
+    }
+
+    residents ||--o{ house_residents : "occupies"
+    houses ||--o{ house_residents : "has history"
+    houses ||--o{ dues : "billed to"
+```
+
 ## Persyaratan
 - PHP >= 8.2
 - Composer
 - Node.js & npm
-- MySQL
+- MySQL / XAMPP
 
 ## Panduan Instalasi (Langkah demi Langkah)
 
@@ -19,7 +69,7 @@ Sistem Administrasi Perumahan yang dibangun menggunakan Laravel 12 (API Backend)
 
 ### 2. Setup Backend (Laravel API)
 1. Buka terminal di folder utama proyek (`sistemadministrasiperum`).
-2. Pastikan file `.env` sudah sesuai dengan kredensial database Anda:
+2. Buat file `.env` (copy dari `.env.example` jika ada) dan sesuaikan kredensial database:
    ```env
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
@@ -28,19 +78,23 @@ Sistem Administrasi Perumahan yang dibangun menggunakan Laravel 12 (API Backend)
    DB_USERNAME=root
    DB_PASSWORD=
    ```
-3. Install dependensi PHP dengan menjalankan:
+3. Install dependensi PHP:
    ```bash
    composer install
    ```
-4. Jalankan migrasi dan seeder untuk membuat tabel dan data default (20 rumah, penghuni, dll):
+4. Jalankan migrasi dan seeder:
    ```bash
    php artisan migrate:fresh --seed
    ```
-5. Jalankan server backend:
+5. **PENTING:** Jalankan link storage agar foto KTP bisa diakses:
+   ```bash
+   php artisan storage:link
+   ```
+6. Jalankan server backend:
    ```bash
    php artisan serve
    ```
-   *Catatan: Backend akan berjalan di `http://localhost:8000`.*
+   *Backend akan berjalan di `http://localhost:8000`.*
 
 ### 3. Setup Frontend (React)
 1. Buka tab terminal baru.
@@ -52,18 +106,19 @@ Sistem Administrasi Perumahan yang dibangun menggunakan Laravel 12 (API Backend)
    ```bash
    npm install
    ```
-4. Jalankan development server frontend:
+4. Jalankan development server:
    ```bash
    npm run dev
    ```
-   *Catatan: Frontend akan berjalan di `http://localhost:5173`.*
+   *Frontend akan berjalan di `http://localhost:5173`.*
 
 ### 4. Menjalankan Aplikasi
-Buka browser dan akses alamat `http://localhost:5173`. Anda akan langsung melihat Dashboard Sistem Administrasi Perumahan.
+Buka browser dan akses alamat `http://localhost:5173`.
 
-## Fitur Utama
-1. **Kelola Penghuni:** Tambah dan Ubah data penghuni (Tetap/Kontrak).
-2. **Kelola Rumah:** Lihat 20 rumah, assign penghuni ke rumah dengan tanggal menempati.
-3. **Pembayaran Iuran:** Buat tagihan Satpam (Rp100.000) dan Kebersihan (Rp15.000), serta pelunasan iuran.
-4. **Pengeluaran:** Catat pengeluaran operasional perumahan.
-5. **Dashboard & Laporan:** Grafik Pemasukan vs Pengeluaran 1 tahun terakhir, serta rincian detail bulanan.
+## Kriteria Sistem yang Terpenuhi
+- **Mengelola Penghuni:** Fitur Tambah/Ubah data dengan atribut Lengkap (Nama, Foto KTP, Status, Telepon, Status Nikah).
+- **Mengelola Rumah:** Fitur Tambah/Ubah Rumah & Penghuni, serta fitur **Riwayat (Historical)** penghuni per rumah.
+- **Status Rumah:** Otomatis berubah (Dihuni / Tidak Dihuni) berdasarkan data penghuni aktif.
+- **Mengelola Pembayaran:** Pencatatan iuran Satpam & Kebersihan. Mendukung pembayaran bulk (misal 1 tahun sekaligus).
+- **Laporan & Grafik:** Dashboard menampilkan grafik pemasukan vs pengeluaran selama 1 tahun terakhir, serta laporan summary saldo.
+- **Export & Print:** Fitur cetak laporan (Excel/PDF/Print) yang bersih (hanya data).

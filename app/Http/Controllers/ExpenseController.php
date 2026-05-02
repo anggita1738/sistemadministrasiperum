@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\Due;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class ExpenseController extends Controller
 {
@@ -28,40 +29,61 @@ class ExpenseController extends Controller
 
     public function summary()
     {
-        // Pemasukan vs Pengeluaran per bulan selama 1 tahun terakhir
-        $income = Due::select(DB::raw('DATE_FORMAT(paid_at, "%Y-%m") as month'), DB::raw('SUM(amount) as total'))
-            ->where('status', 'lunas')
+        // Pemasukan per bulan (dari iuran yang sudah lunas)
+        $income = DB::table('dues')
+            ->selectRaw("DATE_FORMAT(paid_at, '%Y-%m') as bulan, SUM(amount) as total")
+            ->where('status', '=', 'lunas')
             ->whereNotNull('paid_at')
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
+            ->groupByRaw("DATE_FORMAT(paid_at, '%Y-%m')")
+            ->orderBy('bulan', 'asc')
             ->limit(12)
             ->get();
 
-        $expense = Expense::select(DB::raw('DATE_FORMAT(expense_date, "%Y-%m") as month'), DB::raw('SUM(amount) as total'))
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
+        // Pengeluaran per bulan
+        $expense = DB::table('expenses')
+            ->selectRaw("DATE_FORMAT(expense_date, '%Y-%m') as bulan, SUM(amount) as total")
+            ->groupByRaw("DATE_FORMAT(expense_date, '%Y-%m')")
+            ->orderBy('bulan', 'asc')
             ->limit(12)
             ->get();
 
-        // Merge the two for easy UI consumption
+        // Merge data
         $summary = [];
         foreach ($income as $inc) {
-            $summary[$inc->month] = ['month' => $inc->month, 'income' => $inc->total, 'expense' => 0];
+            $summary[$inc->bulan] = [
+                'month' => $inc->bulan,
+                'income' => (float)$inc->total,
+                'expense' => 0,
+            ];
         }
         foreach ($expense as $exp) {
-            if (!isset($summary[$exp->month])) {
-                $summary[$exp->month] = ['month' => $exp->month, 'income' => 0, 'expense' => $exp->total];
+            if (!isset($summary[$exp->bulan])) {
+                $summary[$exp->bulan] = [
+                    'month' => $exp->bulan,
+                    'income' => 0,
+                    'expense' => (float)$exp->total,
+                ];
             } else {
-                $summary[$exp->month]['expense'] = $exp->total;
+                $summary[$exp->bulan]['expense'] = (float)$exp->total;
             }
         }
 
-        // Calculate balance
-        foreach ($summary as $month => $data) {
-            $summary[$month]['balance'] = $data['income'] - $data['expense'];
+        // Fill last 12 months with zeros if no data
+        $result = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i)->format('Y-m');
+            $incomeVal = isset($summary[$month]) ? $summary[$month]['income'] : 0;
+            $expenseVal = isset($summary[$month]) ? $summary[$month]['expense'] : 0;
+            
+            $result[] = [
+                'month' => $month,
+                'income' => $incomeVal,
+                'expense' => $expenseVal,
+                'balance' => $incomeVal - $expenseVal,
+            ];
         }
 
-        return response()->json(array_values($summary));
+        return response()->json($result);
     }
 
     public function monthlyDetail(Request $request)
@@ -70,17 +92,17 @@ class ExpenseController extends Controller
 
         $incomeDetails = Due::with('house')
             ->where('status', 'lunas')
-            ->where(DB::raw('DATE_FORMAT(paid_at, "%Y-%m")'), $month)
+            ->whereRaw("DATE_FORMAT(paid_at, '%Y-%m') = ?", [$month])
             ->get();
 
-        $expenseDetails = Expense::where(DB::raw('DATE_FORMAT(expense_date, "%Y-%m")'), $month)->get();
+        $expenseDetails = Expense::whereRaw("DATE_FORMAT(expense_date, '%Y-%m') = ?", [$month])->get();
 
         return response()->json([
             'month' => $month,
             'incomes' => $incomeDetails,
             'expenses' => $expenseDetails,
-            'total_income' => $incomeDetails->sum('amount'),
-            'total_expense' => $expenseDetails->sum('amount')
+            'total_income' => (float)$incomeDetails->sum('amount'),
+            'total_expense' => (float)$expenseDetails->sum('amount'),
         ]);
     }
 }
