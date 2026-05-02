@@ -73,10 +73,15 @@ export default function Houses() {
 
   const openHistoryModal = (house) => {
     setSelectedHouse(house);
-    api.get(`/houses/${house.id}/history`).then(res => {
-      setHouseHistory(res.data);
-      setShowHistoryModal(true);
-    });
+    api.get(`/houses/${house.id}/history`)
+      .then(res => {
+        setHouseHistory(res.data);
+        setShowHistoryModal(true);
+      })
+      .catch(err => {
+        console.error("Gagal mengambil riwayat:", err);
+        alert("Gagal mengambil data riwayat penghuni.");
+      });
   };
 
   const closeModals = () => {

@@ -8,6 +8,17 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  build: {
+    outDir: '../public',
+    emptyOutDir: false,
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`
+      }
+    }
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8000'

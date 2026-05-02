@@ -1,6 +1,9 @@
 // Use globals from CDN as primary, fallback to imports
 const getJsPDF = () => {
+    // Try different possible global names for jsPDF
     if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
+    if (window.jsPDF) return window.jsPDF;
+    if (window.jspdf) return window.jspdf;
     return null; 
 };
 
